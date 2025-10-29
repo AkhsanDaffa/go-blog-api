@@ -4,18 +4,18 @@ import (
 	"database/sql"
 	"log"
 
-	"go-blog-api/config"
-
+	"github.com/gin-gonic/gin"
 	_ "github.com/jackc/pgx/v5/stdlib"
+
+	"go-blog-api/config"
+	"go-blog-api/handler"
+	"go-blog-api/repository"
 )
 
 func main() {
 	log.Println("Memulai aplikasi blog...")
 
 	connStr := config.GetDBConnectionString()
-	if connStr == "" {
-		log.Fatal("Connection string tidak ditemukan")
-	}
 
 	db, err := sql.Open("pgx", connStr)
 	if err != nil {
@@ -26,6 +26,28 @@ func main() {
 	if err := db.Ping(); err != nil {
 		log.Fatalf("Gagal terhubung ke DB: %v", err)
 	}
+	log.Println("🎉 BERHASIL TERHUBUNG KE DATABASE 'blog_db' 🎉")
 
-	log.Println("Berhasil terhubung ke Database")
+	userRepo := repository.NewUserRepository(db)
+
+	userHandler := handler.NewUserHandler(userRepo)
+
+	r := gin.Default()
+
+	userRoutes := r.Group("/users")
+	{
+		// POST /users
+		userRoutes.POST("", userHandler.CreateUser)
+
+		// GET /users
+		userRoutes.GET("", userHandler.GetAllUsers)
+
+		// GET /users/:id
+		userRoutes.GET("/:id", userHandler.GetUserByID)
+	}
+
+	log.Println("Server Running")
+	if err := r.Run("localhost:8000"); err != nil {
+		log.Fatalf("Faild server: %v", err)
+	}
 }
