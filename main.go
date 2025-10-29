@@ -29,8 +29,10 @@ func main() {
 	log.Println("🎉 BERHASIL TERHUBUNG KE DATABASE 'blog_db' 🎉")
 
 	userRepo := repository.NewUserRepository(db)
-
 	userHandler := handler.NewUserHandler(userRepo)
+
+	postRepo := repository.NewPostRepository(db)
+	postHandler := handler.NewPostHandler(postRepo)
 
 	r := gin.Default()
 
@@ -44,6 +46,18 @@ func main() {
 
 		// GET /users/:id
 		userRoutes.GET("/:id", userHandler.GetUserByID)
+
+		// GET /users/:id/posts
+		userRoutes.GET("/:id/posts", postHandler.GetPostsByUserID)
+	}
+
+	postRoutes := r.Group("/posts")
+	{
+		// POST /posts
+		postRoutes.POST("", postHandler.CreatePost)
+
+		// GET /posts
+		postRoutes.GET("", postHandler.GetAllPosts)
 	}
 
 	log.Println("Server Running")
